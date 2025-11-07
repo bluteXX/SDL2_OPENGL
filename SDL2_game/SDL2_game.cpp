@@ -1,4 +1,5 @@
 ﻿#include <SDL.h>
+#include <iostream>
 
 int main(int argc, char* argv[]) {
     if (SDL_Init(SDL_INIT_VIDEO) < 0) return 1;
@@ -23,12 +24,12 @@ int main(int argc, char* argv[]) {
             if (e.type == SDL_QUIT)
                 running = false;
         }
-
+		std::cout << "Rendering frame..." << std::endl;
         SDL_SetRenderDrawColor(renderer, 30, 30, 30, 255);
         SDL_RenderClear(renderer);
 
         SDL_SetRenderDrawColor(renderer, 200, 50, 50, 255);
-        SDL_RenderDrawLine(renderer, 0, 0, 640, 480);
+        SDL_RenderDrawLine(renderer, 0, 120, 640, 480);
 
         SDL_RenderPresent(renderer);
     }
