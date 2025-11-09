@@ -1,4 +1,4 @@
-SRC_DIR = src/SDL2_game
+SRC_DIR = src/
 CC = g++
 
 SRC_FILES = $(wildcard $(SRC_DIR)/*.cpp) src/glad.c
