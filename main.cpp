@@ -1,29 +1,9 @@
 #include <SDL2/SDL.h>
-#include <iostream>
 #include <glad/glad.h>
+#include <iostream>
 #include <vector>
-
-
-//--------------------------------------------------------------
-// SHADERS
-//--------------------------------------------------------------
-
-const std::string gVertexShaderSource =
-"#version 410 core\n"
-"layout(location = 0) in vec3 position;\n"
-"void main()\n"
-"{\n"
-"    gl_Position = vec4(position, 1.0);\n"
-"}\n";
-
-const std::string gFragmentshaderSource =
-"#version 410 core\n"
-"out vec4 outColor;\n"
-"void main()\n"
-"{\n"
-"    outColor = vec4(1.0, 0.5, 0.0, 1.0);\n"
-"}\n";
-
+#include <fstream>
+#include <string>
 
 //--------------------------------------------------------------
 // Global variables
@@ -37,45 +17,91 @@ SDL_GLContext OpenGlContext = nullptr;
 bool quit = false;
 
 GLuint glVertexArrayObject = 0;
-GLuint glVertexBuforObject = 0;
+GLuint glVertexBufferObject = 0;
+GLuint glIndexBuferObject2 = 0;
 GLuint gGraphicsPipelineShaderProgram = 0;
-
 
 //--------------------------------------------------------------
 // SHADER UTILS
 //--------------------------------------------------------------
 
+
+std::string LoadShaderAsString(const std::string& filename)
+{
+   std::string result="";
+   std::ifstream myfile(filename);
+
+
+    if (myfile.is_open())
+    {
+        std::string line;
+        while (std::getline(myfile, line))
+        {
+            result += line + "\n";
+        }
+        myfile.close();
+    }
+    else
+    {
+        std::cerr << "Unable to open file: " << filename << std::endl;
+    }
+
+
+
+    return result;
+
+
+   
+}
+
+
+
 GLuint CompileShader(GLuint type, const std::string& source)
 {
-    GLuint shaderObject = glCreateShader(type);
+    GLuint shader = glCreateShader(type);
     const char* src = source.c_str();
-    glShaderSource(shaderObject, 1, &src, nullptr);
-    glCompileShader(shaderObject);
-    return shaderObject;
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+
+    GLint success;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    if (!success)
+    {
+        char infoLog[512];
+        glGetShaderInfoLog(shader, 512, nullptr, infoLog);
+        std::cerr << "Shader compile error: " << infoLog << std::endl;
+    }
+
+    return shader;
 }
 
 GLuint CreateShaderProgram(const std::string& vs, const std::string& fs)
 {
-    GLuint programObject = glCreateProgram();
+    GLuint program = glCreateProgram();
+    GLuint vertexShader = CompileShader(GL_VERTEX_SHADER, vs);
+    GLuint fragmentShader = CompileShader(GL_FRAGMENT_SHADER, fs);
 
-    GLuint myVertexShader = CompileShader(GL_VERTEX_SHADER, vs);
-    GLuint myFragmentShader = CompileShader(GL_FRAGMENT_SHADER, fs);
+    glAttachShader(program, vertexShader);
+    glAttachShader(program, fragmentShader);
 
-    glAttachShader(programObject, myVertexShader);
-    glAttachShader(programObject, myFragmentShader);
+    glLinkProgram(program);
+    glValidateProgram(program);
 
-    glLinkProgram(programObject);
-    glValidateProgram(programObject);
+    glDeleteShader(vertexShader);
+    glDeleteShader(fragmentShader);
 
-    return programObject;
+    return program;
 }
 
 void CreateGraphicsPipeline()
 {
-    gGraphicsPipelineShaderProgram =
-        CreateShaderProgram(gVertexShaderSource, gFragmentshaderSource);
-}
 
+    std::string vertexShaderCode = LoadShaderAsString("../src/shaders/vert.glsl");
+    std::string fragmentShaderCode = LoadShaderAsString("../src/shaders/frag.glsl");
+
+
+    gGraphicsPipelineShaderProgram = CreateShaderProgram(vertexShaderCode, fragmentShaderCode);
+}
 
 //--------------------------------------------------------------
 // VERTEX SPECIFICATION
@@ -83,34 +109,75 @@ void CreateGraphicsPipeline()
 
 void VertexSpecification()
 {
-    const std::vector<GLfloat> vertexPosition{
-        -0.8f, -0.8f, 0.0f,
-         0.8f, -0.8f, 0.0f,
-         0.0f,  0.8f, 0.0f
+    std::vector<GLfloat> vertexPosition{
+        // pos            // color
+        
+        -0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f, //ld vector 0
+         0.5f,  -0.5f, 0.0f,   0.0f, 1.0f, 0.0f, //pd vector 1
+        -0.5f,   0.5f, 0.0f,   0.0f, .0f, 1.0f, //lu vector 2
+
+         
+        0.5f,  0.5f, 0.0f,      1.0f, 0.0f, 0.0f, //pu vector 3
+         
+
+
     };
 
     glGenVertexArrays(1, &glVertexArrayObject);
     glBindVertexArray(glVertexArrayObject);
 
-    glGenBuffers(1, &glVertexBuforObject);
-    glBindBuffer(GL_ARRAY_BUFFER, glVertexBuforObject);
+    glGenBuffers(1, &glVertexBufferObject);
+    glBindBuffer(GL_ARRAY_BUFFER, glVertexBufferObject);
     glBufferData(GL_ARRAY_BUFFER, vertexPosition.size() * sizeof(GLfloat),
                  vertexPosition.data(), GL_STATIC_DRAW);
 
+    
+
+
+
+    std::vector<GLint> vertexindex{
+        0,1,2,
+        1,3,2
+  
+         
+
+
+    };
+
+
+    glGenBuffers (1, &glIndexBuferObject2);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, glIndexBuferObject2);
+ glBufferData(GL_ELEMENT_ARRAY_BUFFER, vertexindex.size() * sizeof(GLfloat),
+                 vertexindex.data(), GL_STATIC_DRAW);
+
+
+
+
+
+
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(
-        0,                  // layout(location = 0)
-        3,                  // vec3
+        0,
+        3,
         GL_FLOAT,
         GL_FALSE,
-        0,
-        (void*)0
+        6 * sizeof(GLfloat),       // stride: 6 floatów
+        (void*)0                   // offset: 0
+    );
+
+    // Atrybut 1: kolor
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(
+        1,
+        3,
+        GL_FLOAT,
+        GL_FALSE,
+        6 * sizeof(GLfloat),       // stride: 6 floatów
+        (void*)(3 * sizeof(GLfloat)) // offset: pozycja ma 3 floaty
     );
 
     glBindVertexArray(0);
-    glDisableVertexAttribArray(0);
 }
-
 
 //--------------------------------------------------------------
 // INIT
@@ -120,7 +187,7 @@ void InitializeProgram()
 {
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
     {
-        std::cout << "Can't initialize SDL video subsystem";
+        std::cerr << "Can't initialize SDL video subsystem" << std::endl;
         exit(1);
     }
 
@@ -130,25 +197,25 @@ void InitializeProgram()
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-    ApplicationWindow = SDL_CreateWindow("first window",
-                                         0, 0,
+    ApplicationWindow = SDL_CreateWindow("SDL2 OpenGL Window",
+                                         SDL_WINDOWPOS_CENTERED,
+                                         SDL_WINDOWPOS_CENTERED,
                                          width, height,
                                          SDL_WINDOW_OPENGL);
 
     if (!ApplicationWindow)
     {
-        std::cout << "Can't create window";
+        std::cerr << "Can't create window" << std::endl;
         exit(1);
     }
 
     OpenGlContext = SDL_GL_CreateContext(ApplicationWindow);
     if (!gladLoadGLLoader(SDL_GL_GetProcAddress))
     {
-        std::cout << "Can't initialize GLAD";
+        std::cerr << "Can't initialize GLAD" << std::endl;
         exit(1);
     }
 }
-
 
 //--------------------------------------------------------------
 // LOOP
@@ -156,14 +223,11 @@ void InitializeProgram()
 
 void Input()
 {
-    SDL_Event t;
-
-    while (SDL_PollEvent(&t))
+    SDL_Event e;
+    while (SDL_PollEvent(&e))
     {
-        if (t.type == SDL_QUIT)
-        {
+        if (e.type == SDL_QUIT)
             quit = true;
-        }
     }
 }
 
@@ -182,7 +246,7 @@ void PreDraw()
 void Draw()
 {
     glBindVertexArray(glVertexArrayObject);
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawElements(GL_TRIANGLES, 6,GL_UNSIGNED_INT,0);
 }
 
 void MainLoop()
@@ -196,27 +260,27 @@ void MainLoop()
     }
 }
 
-
 //--------------------------------------------------------------
 // CLEAN
 //--------------------------------------------------------------
 
 void CleanUp()
 {
+    SDL_GL_DeleteContext(OpenGlContext);
     SDL_DestroyWindow(ApplicationWindow);
     SDL_Quit();
 }
-
 
 //--------------------------------------------------------------
 // MAIN
 //--------------------------------------------------------------
 
-int main()
+int SDL_main(int argc, char* argv[])
 {
     InitializeProgram();
     VertexSpecification();
     CreateGraphicsPipeline();
     MainLoop();
     CleanUp();
+    return 0;
 }
