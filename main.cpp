@@ -1,10 +1,17 @@
 #include <SDL2/SDL.h>
 #include <glad/glad.h>
+#include "CAMERA.HPP"
 #include <iostream>
 #include <vector>
 #include <fstream>
 #include <string>
-
+#include <glm/vec3.hpp> // glm::vec3
+#include <glm/vec4.hpp> // glm::vec4
+#include <glm/mat4x4.hpp> // glm::mat4
+#include <glm/ext/matrix_transform.hpp> // glm::translate, glm::rotate, glm::scale
+#include <glm/ext/matrix_clip_space.hpp> // glm::perspective
+#include <glm/ext/scalar_constants.hpp> // glm::pi
+#include <glm/gtc/matrix_transform.hpp>
 //--------------------------------------------------------------
 // Global variables
 //--------------------------------------------------------------
@@ -21,6 +28,12 @@ GLuint glVertexBufferObject = 0;
 GLuint glIndexBuferObject2 = 0;
 GLuint gGraphicsPipelineShaderProgram = 0;
 
+float g_uOffset = -2.0f;
+float g_uRotate = 0.0f;
+float g_uScale = 0.5f;
+
+
+CAMERA gCamera;
 //--------------------------------------------------------------
 // SHADER UTILS
 //--------------------------------------------------------------
@@ -136,8 +149,9 @@ void VertexSpecification()
 
 
     std::vector<GLint> vertexindex{
-        0,1,2,
-        1,3,2
+        2,0,1,
+        3,2,1
+        
   
          
 
@@ -223,13 +237,58 @@ void InitializeProgram()
 
 void Input()
 {
+    int mousdeX = width / 2;
+            int mouseY = height / 2;
     SDL_Event e;
     while (SDL_PollEvent(&e))
     {
+
         if (e.type == SDL_QUIT)
+        {
             quit = true;
+        }
+        else if (e.type == SDL_MOUSEMOTION)
+        {
+            mousdeX = e.motion.x;
+            mouseY = e.motion.y;
+            gCamera.MouseLook(mousdeX, mouseY);
+        }
     }
+
+    g_uRotate += 1.0f;
+    const Uint8* state = SDL_GetKeyboardState(NULL);
+    if (state[SDL_SCANCODE_UP])
+    {
+
+        gCamera.MoveForward(0.1f);
+
+
+
+        //g_uOffset += 0.01f;
+        //std::cout << "Offset: " << g_uOffset << std::endl;
+    }
+    if (state[SDL_SCANCODE_DOWN])
+    {
+        gCamera.MoveBackward(0.1f);
+        //g_uOffset -= 0.01f;
+        //std::cout << "Offset: " << g_uOffset << std::endl;
+    }
+    if (state[SDL_SCANCODE_LEFT])
+    {
+        gCamera.MoveLeft(0.1f);
+    }
+    if (state[SDL_SCANCODE_RIGHT])
+    {
+        gCamera.MoveRight(0.1f);
+    }
+    
+  
+    
+    
+
+
 }
+
 
 void PreDraw()
 {
@@ -239,8 +298,44 @@ void PreDraw()
     glViewport(0, 0, width, height);
     glClearColor(1.f, 1.f, 0.f, 1.f);
     glClear(GL_COLOR_BUFFER_BIT);
-
+    //model matrix, make square speaning, rotating and scaling
     glUseProgram(gGraphicsPipelineShaderProgram);
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, 0.0f));//We set to zero translation for camera view testing
+    model = glm::rotate(model, glm::radians(g_uRotate), glm::vec3(0.0f, 1.0f, 0.0f));//rotate around y axis 
+    model = glm::scale(model, glm::vec3(g_uScale, g_uScale, g_uScale));//uniform scaling
+    GLint u_ModelMatrixlocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ModelMatrix");
+
+       if(u_ModelMatrixlocation>=0)
+    {
+        glUniformMatrix4fv(u_ModelMatrixlocation,1,GL_FALSE,&model[0][0]);
+    }else
+    {
+        std::cerr<<"Uniform u_ModelMatrix not found!"<<std::endl;
+    }
+
+    //pCamera view matrix
+    glm::mat4 view = gCamera.getViewMatrix();
+
+    GLint u_ViewMatrixlocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_ViewMatrix");
+    if(u_ViewMatrixlocation>=0)
+    {
+        glUniformMatrix4fv(u_ViewMatrixlocation,1,GL_FALSE,&view[0][0]);
+    }else
+    {
+        std::cerr<<"Uniform u_ViewMatrix not found!"<<std::endl;
+    }
+
+    //perspective projection matrix
+    glm::mat4 perspective = glm::perspective(glm::radians(45.0f),(float)width/(float)height,0.1f,10.0f);
+    GLint u_Perspectivelocation = glGetUniformLocation(gGraphicsPipelineShaderProgram, "u_PerspectiveMatrix");
+    if(u_Perspectivelocation>=0)
+    {
+        glUniformMatrix4fv(u_Perspectivelocation,1,GL_FALSE,&perspective[0][0]);
+    }else
+    {
+        std::cerr<<"Uniform u_PerspectiveMatrix not found!"<<std::endl;
+    }
+   
 }
 
 void Draw()
@@ -251,6 +346,9 @@ void Draw()
 
 void MainLoop()
 {
+
+    SDL_WarpMouseInWindow(ApplicationWindow, width / 2, height / 2);
+    SDL_SetRelativeMouseMode(SDL_TRUE);
     while (!quit)
     {
         Input();
