@@ -1,39 +1,39 @@
-# Prosty Silnik 3D: OpenGL + SDL2
+Simple 3D Engine: OpenGL + SDL2
 
-Ten projekt to podstawowa aplikacja graficzna napisana w C++, wykorzystująca **OpenGL 4.1**, **SDL2** do zarządzania oknem i wejściem, oraz bibliotekę **GLM** do operacji matematycznych w przestrzeni 3D. Aplikacja renderuje obracający się, kolorowy kwadrat i pozwala na swobodne poruszanie się po scenie za pomocą prostej kamery pierwszoosobowej (FPS).
+This project is a basic graphical application written in C++ using OpenGL 4.1, SDL2 for window and input handling, and the GLM library for 3D mathematical operations. The application renders a rotating, colored square and allows free movement around the scene using a simple first-person (FPS) camera.
 
-## 🚀 Funkcje
-* **Renderowanie OpenGL:** Używa nowoczesnego potoku graficznego (Core Profile) z wykorzystaniem VAO, VBO i EBO.
-* **Kamera 3D:** Pełna obsługa macierzy widoku i projekcji (Model-View-Projection).
-* **Nawigacja po scenie:** Poruszanie się w przestrzeni za pomocą klawiatury oraz obracanie kamery za pomocą myszy (Mouse Look).
-* **Zewnętrzne shadery:** Ładowanie i kompilacja kodu shaderów (Vertex & Fragment) bezpośrednio z plików zewnętrznych.
+🚀 Features
+OpenGL Rendering: Uses the modern graphics pipeline (Core Profile) with VAO, VBO, and EBO.
+3D Camera: Full handling of view and projection matrices (Model-View-Projection).
+Scene Navigation: Movement in 3D space using the keyboard and camera rotation using the mouse (Mouse Look).
+External Shaders: Loading and compiling shader code (Vertex & Fragment) directly from external files.
+🛠 Requirements and Dependencies
 
-## 🛠 Wymagania i Zależności
-Aby skompilować i uruchomić projekt, potrzebujesz następujących bibliotek:
-* **C++ Compiler** (wspierający standard C++11 lub nowszy)
-* **[SDL2](https://www.libsdl.org/)** - Obsługa okien, kontekstu OpenGL i wejścia (klawiatura/mysz).
-* **[GLAD](https://glad.dav1d.de/)** - Ładowanie rozszerzeń i funkcji OpenGL.
-* **[GLM](https://github.com/g-truc/glm)** - Biblioteka matematyczna dla grafiki 3D (nagłówki).
+To compile and run the project, you need the following libraries:
 
-## 🎮 Sterowanie
-Aplikacja przechwytuje kursor myszy zaraz po uruchomieniu, pozwalając na płynne rozglądanie się.
+C++ Compiler (supporting C++11 or newer)
+SDL2 – Window handling, OpenGL context, and input (keyboard/mouse)
+GLAD – Loading OpenGL functions and extensions
+GLM – Header-only math library for 3D graphics
+🎮 Controls
 
-* **Mysz:** Rozglądanie się / Obrót kamery (lewo/prawo)
-* **Strzałka w górę (Up):** Ruch do przodu
-* **Strzałka w dół (Down):** Ruch do tyłu
-* **Strzałka w lewo (Left):** Ruch w lewo (strafing)
-* **Strzałka w prawo (Right):** Ruch w prawo (strafing)
-* **Zamknięcie okna:** Kończy działanie programu (Escape nie jest domyślnie podpięty, można zamknąć okno systemowo).
+The application captures the mouse cursor immediately after launch, allowing smooth camera control.
 
-## 📂 Oczekiwana struktura plików
-Zwróć uwagę, że kod ładuje shadery z konkretnej ścieżki względnej. Aby program działał poprawnie bez modyfikacji kodu, upewnij się, że struktura Twojego projektu wygląda mniej więcej tak:
+Mouse: Look around / Rotate camera (left/right)
+Up Arrow: Move forward
+Down Arrow: Move backward
+Left Arrow: Move left (strafing)
+Right Arrow: Move right (strafing)
+Closing the window: Terminates the program (Escape is not bound by default; close via the system window controls).
+📂 Expected File Structure
 
-```text
+Note that the code loads shaders from a specific relative path. To run the program without modifying the code, make sure your project structure looks roughly like this:
+
 ├── src/
 │   ├── shaders/
 │   │   ├── vert.glsl    # Vertex shader
 │   │   └── frag.glsl    # Fragment shader
-│   ├── main.cpp         # Główny plik z pętlą gry i renderowaniem
-│   └── CAMERA.HPP       # Plik nagłówkowy klasy kamery
-│   └── CAMERA.CPP       # Implementacja klasy kamery (jeśli wydzielona)
-├── build/               # Folder z plikiem wykonywalnym (np. po użyciu CMake)
+│   ├── main.cpp         # Main file with game loop and rendering
+│   ├── CAMERA.HPP       # Camera class header file
+│   └── CAMERA.CPP       # Camera class implementation (if separated)
+├── build/               # Folder containing the executable (e.g., after using CMake)
